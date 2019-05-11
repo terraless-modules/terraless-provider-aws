@@ -1,0 +1,9 @@
+# Added by tests
+lambda-at-edge.zip
+
+# Added by packr2 build
+*-packr.go
+main-packr.go
+
+# Others
+coverage.txt
