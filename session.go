@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/gofrs/flock"
-	"github.com/sirupsen/logrus"
 )
 
 type AwsProfileWriter struct {
@@ -26,7 +25,7 @@ var writeSessionProfileFunc = writeSessionProfile
 func (provider *ProviderAws) PrepareSession(terralessConfig schema.TerralessConfig) {
 	for _, configProvider := range terralessConfig.Providers {
 		if provider.CanHandle(configProvider.Type) {
-			logrus.Debugf("Found AWS Provider: %s\n", configProvider.Name)
+			logger.Debug("Found AWS Provider: %s\n", configProvider.Name)
 
 			intermediateProfile := processIntermediateProfile(configProvider, terralessConfig.Settings.AutoSignIn)
 
@@ -40,7 +39,7 @@ func processIntermediateProfile(provider schema.TerralessProvider, autoSignIn bo
 
 	if intermediateProfilesProcessed[provider.Name] == "" {
 		if intermediateProfile == "" {
-			logrus.Debug("No intermediate profile! Using default....")
+			logger.Debug("No intermediate profile! Using default....")
 			intermediateProfile = "terraless-session"
 		}
 
@@ -55,17 +54,17 @@ func processIntermediateProfile(provider schema.TerralessProvider, autoSignIn bo
 }
 
 func verifyOrUpdateSession(provider schema.TerralessProvider, intermediateProfile string, autoSignIn bool) {
-	logrus.Debugf("Checking provider %s\n", provider)
+	logger.Debug("Checking provider %s\n", provider)
 	validSession, err := sessionValid(provider)
 	if !validSession {
 		if autoSignIn {
-			logrus.Infof("Trying auto login for provider %s [intermediate profile: %s]\n", provider.Name, intermediateProfile)
+			logger.Info("Trying auto login for provider %s [intermediate profile: %s]\n", provider.Name, intermediateProfile)
 			assumeRole(intermediateProfile, provider)
 			validSession, err = sessionValid(provider)
 		}
 
 		if !validSession {
-			logrus.Fatalf("No AWS Session for provider: %s [Error: %s]\n", provider.Name, err)
+			fatal("No AWS Session for provider: %s [Error: %s]\n", provider.Name, err)
 		}
 	}
 }
@@ -74,7 +73,7 @@ func validateOrRefreshIntermediateSession(provider schema.TerralessProvider, int
 	mfaDevice := provider.Data["mfa-device"]
 
 	if mfaDevice == "" {
-		logrus.Debug("No mfa-device! Nothing to do....")
+		logger.Debug("No mfa-device! Nothing to do....")
 		return
 	}
 
@@ -87,7 +86,7 @@ func validateOrRefreshIntermediateSession(provider schema.TerralessProvider, int
 	if baseProfile == "" {
 		baseProfile = "default"
 	}
-	logrus.Debugf("Creating intermediate profile session. Region: %s IntermediateProfile: %s BaseProfile: %s\n",
+	logger.Debug("Creating intermediate profile session. Region: %s IntermediateProfile: %s BaseProfile: %s\n",
 		region, intermediateProfile, baseProfile)
 
 	intermediateProvider := schema.TerralessProvider{
@@ -100,14 +99,14 @@ func validateOrRefreshIntermediateSession(provider schema.TerralessProvider, int
 	}
 	validSession, err := sessionValid(intermediateProvider)
 	if err == nil && validSession {
-		logrus.Debug("Intermediate session still valid....")
+		logger.Debug("Intermediate session still valid....")
 		return
 	}
 
 	// Retrieve session token for base profile in order to store it as intermediate profile
 	intermediateProvider.Data["profile"] = baseProfile
 	awsCredentials := getIntermediateSessionToken(intermediateProvider)
-	logrus.Debug(awsCredentials)
+	logger.Debug(awsCredentials.String())
 
 	writeSessionProfileFunc(*awsCredentials, intermediateProfile, region)
 }
@@ -117,7 +116,7 @@ func assumeRole(intermediateProfile string, provider schema.TerralessProvider) {
 	role := provider.Data["role"]
 
 	if accountId == "" || role == "" {
-		logrus.Fatalf("Can not assume role without accountId and role! Provider: %s Data: %s\n", provider.Name, provider.Data)
+		fatal("Can not assume role without accountId and role! Provider: %s Data: %s\n", provider.Name, provider.Data)
 	}
 
 	arn := fmt.Sprintf("arn:aws:iam::%s:role/%s", accountId, role)
@@ -129,20 +128,19 @@ func assumeRole(intermediateProfile string, provider schema.TerralessProvider) {
 	}
 	svc := sts.New(sessionForProvider(signInProvider))
 
-	logrus.Debugf("Trying to assume role %s\n", arn)
+	logger.Debug("Trying to assume role %s\n", arn)
 	output, err := execAssumeRoleFunc(svc, sts.AssumeRoleInput{
 		DurationSeconds: aws.Int64(getDurationFromData(provider.Data, "session-duration", TargetSessionTokenDuration)),
 		RoleArn:         aws.String(arn),
 		RoleSessionName: aws.String(support.SanitizeSessionName(provider.Name)),
 	})
 	if err != nil {
-		logrus.Debugln(provider.Data)
-		logrus.Fatalf("[Provider: %s] Failed retrieving session token! Error: %s\n", provider.Name, err)
+		fatal("[Provider: %s] Failed retrieving session token! Error: %s\n", provider.Name, err)
 	}
 
 	profileName := provider.Name
 	if provider.Data["profile"] != "" {
-		logrus.Debugf("Using profile name from data %s [Provider: %s]\n", provider.Data["profile"], provider.Name)
+		logger.Debug("Using profile name from data %s [Provider: %s]\n", provider.Data["profile"], provider.Name)
 		profileName = provider.Data["profile"]
 	}
 
@@ -159,15 +157,15 @@ func execAssumeRole(svc *sts.STS, input sts.AssumeRoleInput) (*sts.AssumeRoleOut
 }
 
 func sessionValid(provider schema.TerralessProvider) (bool, error) {
-	logrus.Debugf("Checking validity of AWS Provider: %s", provider)
+	logger.Debug("Checking validity of AWS Provider: %s", provider)
 	identity, err := retrieveCallerIdentityFunc(provider)
 
 	if err != nil {
-		logrus.Debugf("Invalid AWS Session for provider: %s Error: %s\n", provider.Name, err)
+		logger.Debug("Invalid AWS Session for provider: %s Error: %s\n", provider.Name, err)
 		return false, err
 	}
 
-	logrus.Debugf("Valid AWS Session for provider: %s User: %s\n", provider.Name, identity)
+	logger.Debug("Valid AWS Session for provider: %s User: %s\n", provider.Name, identity)
 	return true, nil
 }
 
@@ -188,11 +186,11 @@ func sessionForProvider(provider schema.TerralessProvider) *session.Session {
 		Region:      aws.String(provider.Data["region"]),
 	}
 
-	logrus.Debugf("AWS Session Profile for config %s\n", provider.Data)
+	logger.Debug("AWS Session Profile for config %s\n", provider.Data)
 	sess, err := session.NewSession(&config)
 
 	if err != nil {
-		logrus.Fatalf("Failed creating AWS Session for provider: %s Error: %s\n", provider, err)
+		fatal("Failed creating AWS Session for provider: %s Error: %s\n", provider, err)
 	}
 
 	return sess
@@ -206,7 +204,7 @@ func simpleSession(provider schema.TerralessProvider) *session.Session {
 	sess, err := session.NewSession(&config)
 
 	if err != nil {
-		logrus.Fatalf("Failed creating AWS Session for provider: %s Error: %s\n", provider, err)
+		fatal("Failed creating AWS Session for provider: %s Error: %s\n", provider, err)
 	}
 
 	return sess

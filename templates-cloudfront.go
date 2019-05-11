@@ -6,7 +6,6 @@ import (
 	"github.com/Odania-IT/terraless/schema"
 	"github.com/Odania-IT/terraless/support"
 	"github.com/Odania-IT/terraless/templates"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -22,7 +21,7 @@ func (provider *ProviderAws) RenderUploadTemplates(terralessData schema.Terrales
 				buffer = renderLambdaAtEdge(currentConfig, upload, buffer)
 			}
 
-			logrus.Debugf("Generating cloudfront template for %s\n", upload.Cloudfront.Domain)
+			logger.Debug("Generating cloudfront template for %s\n", upload.Cloudfront.Domain)
 			upload.Cloudfront.Aliases = append(upload.Cloudfront.Aliases, upload.Cloudfront.Domain)
 			upload.Environment = terralessData.Arguments.Environment
 			upload.ProjectName = currentConfig.ProjectName
@@ -73,7 +72,7 @@ func lambdaAtEdgeZip(config schema.TerralessConfig) string {
 		err := os.Remove(targetFile)
 
 		if err != nil {
-			logrus.Fatalf("Failed deleting old zip %s\n", err)
+			fatal("Failed deleting old zip %s\n", err)
 		}
 	}
 
@@ -82,24 +81,24 @@ func lambdaAtEdgeZip(config schema.TerralessConfig) string {
 	writer, err := zipWriter.Create("lambda.js")
 
 	if err != nil {
-		logrus.Fatalf("Failed creating zip %s\n", err)
+		fatal("Failed creating zip %s\n", err)
 	}
 
 	_, err = writer.Write([]byte(awsTemplates("lambda-at-edge.js")))
 
 	if err != nil {
-		logrus.Fatalf("Failed creating zip %s\n", err)
+		fatal("Failed creating zip %s\n", err)
 	}
 
 	err = zipWriter.Close()
 	if err != nil {
-		logrus.Fatalf("Failed creating zip %s\n", err)
+		fatal("Failed creating zip %s\n", err)
 	}
 
 	err = ioutil.WriteFile(targetFile, buffer.Bytes(), 0640)
 
 	if err != nil {
-		logrus.Fatalf("Failed creating zip %s\n", err)
+		fatal("Failed creating zip %s\n", err)
 	}
 
 	return targetFile

@@ -6,7 +6,6 @@ import (
 	"github.com/Odania-IT/terraless/schema"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"strconv"
@@ -24,7 +23,7 @@ func askForTokenCode(tokenSerialNumber string, in io.Reader) string {
 
 	tokenCode, err := reader.ReadString('\n')
 	if err != nil {
-		logrus.Fatalf("Error reading MFA input! Error: %s\n", err)
+		fatal("Error reading MFA input! Error: %s\n", err)
 	}
 
 	return tokenCode
@@ -37,7 +36,7 @@ func getTokenCode(mfaArn string, reader io.Reader) string {
 }
 
 func getIntermediateSessionToken(provider schema.TerralessProvider) *sts.Credentials {
-	logrus.Debugf("Retrieving session for AWS Provider: %s", provider)
+	logger.Debug("Retrieving session for AWS Provider: %s", provider)
 	svc := sts.New(sessionForProvider(provider))
 
 	mfaDevice := provider.Data["mfa-device"]
@@ -51,10 +50,10 @@ func getIntermediateSessionToken(provider schema.TerralessProvider) *sts.Credent
 		getSessionTokenInput.TokenCode = aws.String(tokenCode)
 	}
 
-	logrus.Debugln(getSessionTokenInput)
+	logger.Debug(getSessionTokenInput.String())
 	output, err := svc.GetSessionToken(&getSessionTokenInput)
 	if err != nil {
-		logrus.Fatalf("[getIntermediateSessionToken] Failed retrieving session token! Error: %s\n", err)
+		fatal("[getIntermediateSessionToken] Failed retrieving session token! Error: %s\n", err)
 	}
 
 	return output.Credentials
@@ -69,7 +68,7 @@ func getDurationFromData(data map[string]string, key string, defaultValue int64)
 
 	parsedInt, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
-		logrus.Errorf("Invalid value for %s specified! Please specify a int! Using default value now... Error: %s\n", key, err)
+		logger.Error("Invalid value for %s specified! Please specify a int! Using default value now... Error: %s\n", key, err)
 		return defaultValue
 	}
 

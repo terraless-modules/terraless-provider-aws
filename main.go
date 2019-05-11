@@ -5,8 +5,9 @@ import (
 	"github.com/Odania-IT/terraless/schema"
 	"github.com/Odania-IT/terraless/templates"
 	"github.com/gobuffalo/packr/v2"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
-	"github.com/sirupsen/logrus"
+	"os"
 )
 
 const (
@@ -14,13 +15,11 @@ const (
 	VERSION      = "0.1.0"
 )
 
-type ProviderAws struct {}
+type ProviderAws struct {
+	logger hclog.Logger
+}
 
-func (provider *ProviderAws) Info(logLevel string) schema.PluginInfo {
-	// Set log level
-	level, _ := logrus.ParseLevel(logLevel)
-	logrus.SetLevel(level)
-
+func (provider *ProviderAws) Info() schema.PluginInfo {
 	return schema.PluginInfo{
 		Name:    ProviderName,
 		Version: VERSION,
@@ -28,7 +27,7 @@ func (provider *ProviderAws) Info(logLevel string) schema.PluginInfo {
 }
 
 func (provider *ProviderAws) Exec(data schema.TerralessData) error {
-	logrus.Infof("[%s] Executing", ProviderName)
+	provider.logger.Info("[%s] Executing", ProviderName)
 
 	return nil
 }
@@ -39,9 +38,19 @@ var handshakeConfig = plugin.HandshakeConfig{
 	MagicCookieValue: "terraless",
 }
 
+var logger hclog.Logger
+
 func main() {
-	logrus.Info("Running Plugin: Terraless Provider AWS")
-	provider := &ProviderAws{}
+	logger = hclog.New(&hclog.LoggerOptions{
+		Level:      hclog.Trace,
+		Output:     os.Stderr,
+		JSONFormat: true,
+	})
+	logger.Info("Running Plugin: Terraless Provider AWS")
+
+	provider := &ProviderAws{
+		logger: logger,
+	}
 
 	// pluginMap is the map of plugins we can dispense.
 	var pluginMap = map[string]plugin.Plugin{
@@ -54,12 +63,17 @@ func main() {
 	})
 }
 
+func fatal(msg string, args ...interface{}) {
+	logger.Error(msg, args...)
+	os.Exit(1)
+}
+
 func awsTemplates(name string) string {
 	pckr := packr.New("awsTemplates", "./templates")
 
 	tpl, err := pckr.FindString(name)
 	if err != nil {
-		logrus.Fatal("Failed retrieving template: ", err)
+		fatal("Failed retrieving template: ", err)
 	}
 
 	return tpl

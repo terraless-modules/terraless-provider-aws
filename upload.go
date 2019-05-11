@@ -6,7 +6,6 @@ import (
 	"github.com/Odania-IT/terraless/support"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 )
@@ -15,11 +14,11 @@ var uploadFileFunc = s3Upload
 func (provider *ProviderAws) ProcessUpload(terralessData schema.TerralessData, upload schema.TerralessUpload) []string {
 	config := terralessData.Config
 	if upload.Type != "s3" {
-		logrus.Debugf("AWS-Provider can not handle upload %s\n", upload.Type)
+		logger.Debug("AWS-Provider can not handle upload %s\n", upload.Type)
 		return []string{}
 	}
 
-	logrus.Infof("Processing Upload Source: %s Bucket: %s\n", upload.Source, upload.Bucket)
+	logger.Info("Processing Upload Source: %s Bucket: %s\n", upload.Source, upload.Bucket)
 
 	configProvider := config.Providers[schema.ProcessString(upload.Provider, terralessData.Arguments, terralessData.Config.Settings)]
 	sess := simpleSession(configProvider)
@@ -30,7 +29,7 @@ func (provider *ProviderAws) ProcessUpload(terralessData schema.TerralessData, u
 	svc := s3manager.NewUploader(sess)
 
 	uploadedFiles := recursiveUpload(filepath.Join(config.SourcePath, upload.Source), upload.Target, upload.Bucket, svc)
-	logrus.Debugf("Uploaded files: %s\n", uploadedFiles)
+	logger.Debug("Uploaded files: %s\n", uploadedFiles)
 
 	return uploadedFiles
 }
@@ -40,25 +39,25 @@ func recursiveUpload(sourceDir string, targetPrefix string, bucketName string, s
 	matches, err := filepath.Glob(filepath.Join(sourceDir, "**"))
 
 	if err != nil {
-		logrus.Fatal("Failed locating upload files: ", filepath.Base(sourceDir), " Error: ", err)
+		fatal("Failed locating upload files: ", filepath.Base(sourceDir), " Error: ", err)
 	}
 
-	logrus.Debugf("%d Objects found to upload to %s\n", len(matches), bucketName)
+	logger.Debug("%d Objects found to upload to %s\n", len(matches), bucketName)
 	for _, filename := range matches {
 		info, err := os.Stat(filename)
 		targetFile := filepath.Join(targetPrefix, filepath.Base(filename))
 
 		if err != nil {
-			logrus.Fatalf("Can not stat %s! Error: %s\n", filename, err)
+			fatal("Can not stat %s! Error: %s\n", filename, err)
 		}
 
 		if info.IsDir() {
-			logrus.Debugf("Processing directory %s", targetFile)
+			logger.Debug("Processing directory %s", targetFile)
 			result = append(result, recursiveUpload(filename, targetFile, bucketName, svc)...)
 		} else {
 			err = addFileToS3(svc, bucketName, filename, targetFile)
 			if err != nil {
-				logrus.Fatalf("Failed uploading file %s to s3 bucket %s\n", targetFile, bucketName)
+				fatal("Failed uploading file %s to s3 bucket %s\n", targetFile, bucketName)
 			}
 
 			result = append(result, targetFile)
@@ -82,12 +81,12 @@ func addFileToS3(svc *s3manager.Uploader, bucket string, filename string, target
 	_, err = file.Read(buffer)
 
 	if err != nil {
-		logrus.Fatalf("Can not read file %s! Error: %s\n", filename, err)
+		fatal("Can not read file %s! Error: %s\n", filename, err)
 	}
 
 	err = file.Close()
 	if err != nil {
-		logrus.Fatalf("Can close file %s! Error: %s\n", filename, err)
+		fatal("Can close file %s! Error: %s\n", filename, err)
 	}
 
 	// Config settings: this is where you choose the bucket, filename, content-type etc.
@@ -102,10 +101,10 @@ func addFileToS3(svc *s3manager.Uploader, bucket string, filename string, target
 	})
 
 	if err != nil {
-		logrus.Fatalf("Can not read file %s! Error: %s\n", filename, err)
+		fatal("Can not read file %s! Error: %s\n", filename, err)
 	}
 
-	logrus.Debugf("Successfully uploaded %s to %s [Content-Type: %s]\n", filename, uploadResult.Location, contentType)
+	logger.Debug("Successfully uploaded %s to %s [Content-Type: %s]\n", filename, uploadResult.Location, contentType)
 	return err
 }
 

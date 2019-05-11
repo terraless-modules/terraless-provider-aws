@@ -5,7 +5,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/go-ini/ini"
 	"github.com/gofrs/flock"
-	"github.com/sirupsen/logrus"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -26,14 +25,14 @@ func (pw AwsProfileWriter) lockAndWriteAwsCredentials(credentials sts.Credential
 	defer func() {
 		cerr := pw.lock.Unlock()
 		if cerr != nil {
-			logrus.Fatalf("[Provider: AWS] Failed to unlock Error %s\n", cerr)
+			fatal("[Provider: AWS] Failed to unlock Error %s\n", cerr)
 		}
 	}()
 
 	locked, err := pw.lock.TryLock()
 
 	if err != nil {
-		logrus.Fatalf("Failed aquiring lock for updating AWS credentials! %s\n", err)
+		fatal("Failed aquiring lock for updating AWS credentials! %s\n", err)
 	}
 
 	if locked {
@@ -43,16 +42,16 @@ func (pw AwsProfileWriter) lockAndWriteAwsCredentials(credentials sts.Credential
 		return
 	}
 
-	logrus.Fatal("AWS credentials lock already locked!")
+	fatal("AWS credentials lock already locked!")
 }
 
 func (pw AwsProfileWriter) writeAwsCredentials(credentials sts.Credentials, targetProfile string) {
-	logrus.Debugf("Loading credentials file %s\n", pw.credentialsFile)
+	logger.Debug("Loading credentials file %s\n", pw.credentialsFile)
 	support.WriteToFileIfNotExists(pw.credentialsFile, "[default]")
 	cfg, err := ini.Load(pw.credentialsFile)
 
 	if err != nil {
-		logrus.Fatalf("Error loading aws credentials! %s\n", err)
+		fatal("Error loading aws credentials! %s\n", err)
 	}
 
 	section := cfg.Section(targetProfile)
@@ -61,7 +60,7 @@ func (pw AwsProfileWriter) writeAwsCredentials(credentials sts.Credentials, targ
 		section, err = cfg.NewSection(targetProfile)
 
 		if err != nil {
-			logrus.Fatalf("Failed creating section in aws credentials file! Error: %s\n", err)
+			fatal("Failed creating section in aws credentials file! Error: %s\n", err)
 		}
 	} else {
 		section.DeleteKey("aws_access_key_id")
@@ -75,20 +74,20 @@ func (pw AwsProfileWriter) writeAwsCredentials(credentials sts.Credentials, targ
 
 	err = cfg.SaveTo(pw.credentialsFile)
 	if err != nil {
-		logrus.Fatalf("Failed writing config file %s! Error: %s\n", pw.credentialsFile, err)
+		fatal("Failed writing config file %s! Error: %s\n", pw.credentialsFile, err)
 	}
 
-	logrus.Debugf("Wrote session token for profile %s\n", targetProfile)
-	logrus.Debugf("Token is valid until: %v\n", credentials.Expiration)
+	logger.Debug("Wrote session token for profile %s\n", targetProfile)
+	logger.Debug("Token is valid until: %v\n", credentials.Expiration)
 }
 
 func (pw AwsProfileWriter) writeAwsConfig(region string, targetProfile string) {
-	logrus.Debugf("Loading config file %s\n", pw.awsConfigFile)
+	logger.Debug("Loading config file %s\n", pw.awsConfigFile)
 	support.WriteToFileIfNotExists(pw.awsConfigFile, "[default]")
 	cfg, err := ini.Load(pw.awsConfigFile)
 
 	if err != nil {
-		logrus.Fatalf("Error loading aws config! %s\n", err)
+		fatal("Error loading aws config! %s\n", err)
 	}
 
 	section := cfg.Section(targetProfile)
@@ -97,7 +96,7 @@ func (pw AwsProfileWriter) writeAwsConfig(region string, targetProfile string) {
 		section, err = cfg.NewSection(targetProfile)
 
 		if err != nil {
-			logrus.Fatalf("Failed creating section in aws config file! Error: %s\n", err)
+			fatal("Failed creating section in aws config file! Error: %s\n", err)
 		}
 	} else {
 		section.DeleteKey("region")
@@ -107,17 +106,17 @@ func (pw AwsProfileWriter) writeAwsConfig(region string, targetProfile string) {
 
 	err = cfg.SaveTo(pw.awsConfigFile)
 	if err != nil {
-		logrus.Fatalf("Failed writing config file %s! Error: %s\n", pw.credentialsFile, err)
+		fatal("Failed writing config file %s! Error: %s\n", pw.credentialsFile, err)
 	}
 
-	logrus.Debugf("Wrote aws config section for profile %s\n", targetProfile)
+	logger.Debug("Wrote aws config section for profile %s\n", targetProfile)
 }
 
 func writeKeyToSection(section *ini.Section, key string, val string) {
 	_, err := section.NewKey(key, val)
 
 	if err != nil {
-		logrus.Fatalf("Failed writting key %s to aws profile section\n", err)
+		fatal("Failed writting key %s to aws profile section\n", err)
 	}
 }
 
@@ -130,7 +129,7 @@ func getCredentialsFile() string {
 
 	usr, err := user.Current()
 	if err != nil {
-		logrus.Fatalf("Error fetching home dir: %s", err)
+		fatal("Error fetching home dir: %s", err)
 	}
 
 	return filepath.Join(usr.HomeDir, ".aws", "credentials")
@@ -139,7 +138,7 @@ func getCredentialsFile() string {
 func getAwsConfigFile() string {
 	usr, err := user.Current()
 	if err != nil {
-		logrus.Fatalf("Error fetching home dir: %s", err)
+		fatal("Error fetching home dir: %s", err)
 	}
 
 	return filepath.Join(usr.HomeDir, ".aws", "config")

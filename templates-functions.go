@@ -5,7 +5,6 @@ import (
 	"github.com/Odania-IT/terraless/schema"
 	"github.com/Odania-IT/terraless/support"
 	"github.com/Odania-IT/terraless/templates"
-	"github.com/sirupsen/logrus"
 	"strconv"
 )
 
@@ -51,7 +50,7 @@ resource "aws_lambda_permission" "lambda-{{.FunctionName}}" {
 
 var addTerralessLambdaRole bool
 func renderBaseFunction(functionConfig schema.TerralessFunction, functionName string, config schema.TerralessConfig, buffer bytes.Buffer) bytes.Buffer {
-	logrus.Debug("Rendering Template for Lambda Function: ", functionName)
+	logger.Debug("Rendering Template for Lambda Function: ", functionName)
 	functionConfig.RenderEnvironment = len(functionConfig.Environment) > 0
 	functionConfig.FunctionName = functionName
 	functionConfig.ProjectName = config.ProjectName
@@ -94,7 +93,7 @@ func (provider *ProviderAws) RenderFunctionTemplates(resourceType string, functi
 		// Events
 		pathsRendered := map[string]string{}
 		for key, event := range functionEventArray {
-			logrus.Debugf("[EventType %s][AWS %s] Rendering Event %s\n", eventType, event.FunctionName, event)
+			logger.Debug("[EventType %s][AWS %s] Rendering Event %s\n", eventType, event.FunctionName, event)
 			functionsToRender[event.FunctionName] = true
 
 			// Render function template
@@ -119,7 +118,7 @@ func (provider *ProviderAws) RenderFunctionTemplates(resourceType string, functi
 			integrationTemplate := functionIntegrationTemplates[functionEvent.Type]
 
 			if integrationTemplate == "" {
-				logrus.Fatal("Event Type ", functionEvent.Type, " unknown! Function: ", event.FunctionName)
+				fatal("Event Type ", functionEvent.Type, " unknown! Function: ", event.FunctionName)
 			}
 
 			buffer = templates.RenderTemplateToBuffer(functionEvent, buffer, integrationTemplate, "function-event-" + functionEvent.Type + "-" + functionEvent.Idx)
