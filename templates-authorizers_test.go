@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"github.com/Odania-IT/terraless/schema"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -10,7 +9,6 @@ import (
 func TestTemplatesFunctions_RenderAuthorizerTemplates(t *testing.T) {
 	// given
 	provider := ProviderAws{}
-	buffer := bytes.Buffer{}
 	config := schema.TerralessConfig{
 		ProjectName: "DummyProjectName",
 		Authorizers: map[string]schema.TerralessAuthorizer{
@@ -30,11 +28,11 @@ func TestTemplatesFunctions_RenderAuthorizerTemplates(t *testing.T) {
 	}
 
 	// when
-	buffer = provider.RenderAuthorizerTemplates(config, buffer)
+	result := provider.RenderAuthorizerTemplates(config)
 
 	// then
-	assert.Contains(t, buffer.String(), `## Terraless Authorizer`)
-	assert.Contains(t, buffer.String(), `resource "aws_api_gateway_authorizer" "terraless-authorizer-SupportedAuthorizer"`)
-	assert.Contains(t, buffer.String(), `"arn1"`)
-	assert.Contains(t, buffer.String(), `"arn2"`)
+	assert.Contains(t, result, `## Terraless Authorizer`)
+	assert.Contains(t, result, `resource "aws_api_gateway_authorizer" "terraless-authorizer-SupportedAuthorizer"`)
+	assert.Contains(t, result, `"arn1"`)
+	assert.Contains(t, result, `"arn2"`)
 }

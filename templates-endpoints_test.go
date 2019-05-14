@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"github.com/Odania-IT/terraless/schema"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -10,7 +9,6 @@ import (
 func TestTemplatesFunctions_RenderEndpointTemplates(t *testing.T) {
 	// given
 	provider := ProviderAws{}
-	buffer := bytes.Buffer{}
 	config := schema.TerralessConfig{
 			ProjectName: "DummyProjectName",
 			Endpoints: []schema.TerralessEndpoint{
@@ -26,10 +24,10 @@ func TestTemplatesFunctions_RenderEndpointTemplates(t *testing.T) {
 		}
 
 	// when
-	buffer = provider.RenderEndpointTemplates(config, buffer)
+	result := provider.RenderEndpointTemplates(config)
 
 	// then
-	assert.Contains(t, buffer.String(), `domain_name     = "my-secret-domain.org"`)
-	assert.Contains(t, buffer.String(), `resource "aws_api_gateway_base_path_mapping" "terraless-endpoint-my-secret-domain-org"`)
-	assert.Contains(t, buffer.String(), `resource "aws_route53_record" "terraless-endpoint-my-secret-domain-org"`)
+	assert.Contains(t, result, `domain_name     = "my-secret-domain.org"`)
+	assert.Contains(t, result, `resource "aws_api_gateway_base_path_mapping" "terraless-endpoint-my-secret-domain-org"`)
+	assert.Contains(t, result, `resource "aws_route53_record" "terraless-endpoint-my-secret-domain-org"`)
 }

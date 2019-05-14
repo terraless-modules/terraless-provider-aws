@@ -3,7 +3,7 @@ module github.com/Odania-IT/terraless-provider-aws
 go 1.12
 
 require (
-	github.com/Odania-IT/terraless v0.1.38
+	github.com/Odania-IT/terraless v0.1.40
 	github.com/aws/aws-sdk-go v1.17.11
 	github.com/go-ini/ini v1.42.0
 	github.com/gobuffalo/genny v0.1.1 // indirect
@@ -13,6 +13,7 @@ require (
 	github.com/hashicorp/go-hclog v0.0.0-20180709165350-ff2cf002a8dd
 	github.com/hashicorp/go-plugin v1.0.0
 	github.com/karrick/godirwalk v1.10.3 // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/sirupsen/logrus v1.4.1
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/stretchr/testify v1.3.0

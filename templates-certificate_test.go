@@ -19,10 +19,9 @@ func TestTerralessFunctions_RenderCertificateTemplates(t *testing.T) {
 			},
 		},
 	}
-	buffer := bytes.Buffer{}
 
 	// when
-	buffer = provider.RenderCertificateTemplates(config, buffer)
+	result := provider.RenderCertificateTemplates(config)
 
 	// then
 	expected := `## Terraless Certificate
@@ -64,5 +63,5 @@ resource "aws_acm_certificate_validation" "terraless-certificate-example-com-val
 }
 
 `
-	assert.Equal(t, expected, buffer.String())
+	assert.Equal(t, expected, result.String())
 }

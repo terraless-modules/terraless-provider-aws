@@ -11,7 +11,8 @@ import (
 	"path/filepath"
 )
 
-func (provider *ProviderAws) RenderUploadTemplates(terralessData schema.TerralessData, buffer bytes.Buffer) bytes.Buffer {
+func (provider *ProviderAws) RenderUploadTemplates(terralessData schema.TerralessData) string {
+	var buffer bytes.Buffer
 	currentConfig := terralessData.Config
 	for _, upload := range currentConfig.Uploads {
 		if upload.Type == "s3" && upload.Cloudfront.Domain != "" {
@@ -37,7 +38,7 @@ func (provider *ProviderAws) RenderUploadTemplates(terralessData schema.Terrales
 		}
 	}
 
-	return buffer
+	return buffer.String()
 }
 
 func renderLambdaAtEdge(currentConfig schema.TerralessConfig, upload schema.TerralessUpload, buffer bytes.Buffer) bytes.Buffer {

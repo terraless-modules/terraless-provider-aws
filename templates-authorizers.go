@@ -7,7 +7,8 @@ import (
 	"github.com/Odania-IT/terraless/templates"
 )
 
-func (provider *ProviderAws) RenderAuthorizerTemplates(config schema.TerralessConfig, buffer bytes.Buffer) bytes.Buffer {
+func (provider *ProviderAws) RenderAuthorizerTemplates(config schema.TerralessConfig) string {
+	var buffer bytes.Buffer
 	for _, authorizer := range config.Authorizers {
 		if authorizer.Type == "aws" {
 			logger.Debug("Generating authorizer template for %s\n", authorizer.Name)
@@ -17,5 +18,5 @@ func (provider *ProviderAws) RenderAuthorizerTemplates(config schema.TerralessCo
 		}
 	}
 
-	return buffer
+	return buffer.String()
 }

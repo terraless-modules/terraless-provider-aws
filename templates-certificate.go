@@ -7,7 +7,8 @@ import (
 	"github.com/Odania-IT/terraless/templates"
 )
 
-func (provider *ProviderAws) RenderCertificateTemplates(config schema.TerralessConfig, buffer bytes.Buffer) bytes.Buffer {
+func (provider *ProviderAws) RenderCertificateTemplates(config schema.TerralessConfig) string {
+	var buffer bytes.Buffer
 	for _, certificate := range config.Certificates {
 		if provider.CanHandle(certificate.Type) {
 			logger.Debug("Generating certificate template for %s\n", certificate.Domain)
@@ -18,5 +19,5 @@ func (provider *ProviderAws) RenderCertificateTemplates(config schema.TerralessC
 		}
 	}
 
-	return buffer
+	return buffer.String()
 }

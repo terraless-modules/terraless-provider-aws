@@ -1,0 +1,35 @@
+# Function {{ .ProjectName }} {{ .FunctionName }} EventKey: {{.Idx}}
+
+`,
+	"cloudWatch": `
+# Function {{ .ProjectName }} {{ .FunctionName }} EventKey: {{.Idx}}
+
+resource "aws_cloudwatch_event_rule" "terraless-lambda-{{.FunctionName}}-{{.Idx}}" {
+  name = "terraform-module-pipeline-status"
+  event_pattern = <<PATTERN
+{
+  "source": [
+    "{{ .Event.Source }}"
+  ],
+  "detail-type": [
+    "{{ .Event.DetailType }}"
+  ]
+}
+PATTERN
+}
+
+resource "aws_cloudwatch_event_target" "terraless-lambda-{{.FunctionName}}-{{.Idx}}" {
+  depends_on = [
+    "aws_lambda_function.lambda-{{.FunctionName}}"
+  ]
+  target_id = "terraless-lambda-{{.FunctionName}}-{{.Idx}}"
+  arn = "${aws_lambda_function.lambda-{{.FunctionName}}.invoke_arn}"
+  rule = "${aws_cloudwatch_event_rule.terraless-lambda-{{.FunctionName}}-{{.Idx}}.name}"
+}
+
+resource "aws_lambda_permission" "terraless-lambda-{{.FunctionName}}-{{.Idx}}" {
+  action = "lambda:InvokeFunction"
+  function_name = "${aws_lambda_function.lambda-{{.FunctionName}}.function_name}"
+  principal = "events.amazonaws.com"
+  source_arn = "${aws_cloudwatch_event_rule.terraless-lambda-{{.FunctionName}}-{{.Idx}}.arn}"
+}

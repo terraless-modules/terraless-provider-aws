@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"github.com/Odania-IT/terraless/schema"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -10,20 +9,18 @@ import (
 func TestTemplatesFunctions_RenderFunctionTemplates_DoesNotHandleWrongType(t *testing.T) {
 	// given
 	provider := ProviderAws{}
-	buffer := bytes.Buffer{}
 
 	// when
-	buffer = provider.RenderFunctionTemplates("dummy", schema.FunctionEvents{}, &schema.TerralessData{}, buffer)
+	result := provider.RenderFunctionTemplates("dummy", schema.FunctionEvents{}, &schema.TerralessData{})
 
 	// then
 	expected := ``
-	assert.Equal(t, expected, buffer.String())
+	assert.Equal(t, expected, result)
 }
 
 func TestTemplatesFunctions_RenderFunctionTemplates_HttpEvent(t *testing.T) {
 	// given
 	provider := ProviderAws{}
-	buffer := bytes.Buffer{}
 	functionEvents := schema.FunctionEvents{
 		Events: map[string][]schema.FunctionEvent{
 			"http": {
@@ -47,23 +44,22 @@ func TestTemplatesFunctions_RenderFunctionTemplates_HttpEvent(t *testing.T) {
 	}
 
 	// when
-	buffer = provider.RenderFunctionTemplates("aws", functionEvents, &terralessData, buffer)
+	result := provider.RenderFunctionTemplates("aws", functionEvents, &terralessData)
 
 	// then
 	expected := `resource "aws_api_gateway_rest_api" "terraless-api-gateway" {
   name        = "DummyProjectName-DummyEnvironment"
   description = "Terraless Api Gateway for DummyProjectName-DummyEnvironment"
 }`
-	assert.Contains(t, buffer.String(), expected)
-	assert.Contains(t, buffer.String(), `output "api-gateway-invoke-url"`)
-	assert.Contains(t, buffer.String(), `resource "aws_api_gateway_resource" "terraless-lambda-DummyFunction-dummy"`)
-	assert.Contains(t, buffer.String(), `resource "aws_cloudwatch_log_group" "lambda-log-DummyFunction"`)
+	assert.Contains(t, result, expected)
+	assert.Contains(t, result, `output "api-gateway-invoke-url"`)
+	assert.Contains(t, result, `resource "aws_api_gateway_resource" "terraless-lambda-DummyFunction-dummy"`)
+	assert.Contains(t, result, `resource "aws_cloudwatch_log_group" "lambda-log-DummyFunction"`)
 }
 
 func TestTemplatesFunctions_RenderFunctionTemplates_SqsEvent(t *testing.T) {
 	// given
 	provider := ProviderAws{}
-	buffer := bytes.Buffer{}
 	functionEvents := schema.FunctionEvents{
 		Events: map[string][]schema.FunctionEvent{
 			"sqs": {
@@ -87,8 +83,8 @@ func TestTemplatesFunctions_RenderFunctionTemplates_SqsEvent(t *testing.T) {
 	}
 
 	// when
-	buffer = provider.RenderFunctionTemplates("aws", functionEvents, &terralessData, buffer)
+	result := provider.RenderFunctionTemplates("aws", functionEvents, &terralessData)
 
 	// then
-	assert.Contains(t, buffer.String(), `# Function DummyProjectName SpecificFunction EventKey: 0`)
+	assert.Contains(t, result, `# Function DummyProjectName SpecificFunction EventKey: 0`)
 }

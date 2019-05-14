@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"github.com/Odania-IT/terraless/schema"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -10,7 +9,6 @@ import (
 func TestTemplatesFunctions_RenderUploadTemplates(t *testing.T) {
 	// given
 	provider := ProviderAws{}
-	buffer := bytes.Buffer{}
 	terralessData := schema.TerralessData{
 		Config: schema.TerralessConfig{
 			ProjectName: "DummyProjectName",
@@ -26,18 +24,17 @@ func TestTemplatesFunctions_RenderUploadTemplates(t *testing.T) {
 	}
 
 	// when
-	buffer = provider.RenderUploadTemplates(terralessData, buffer)
+	result := provider.RenderUploadTemplates(terralessData)
 
 	// then
-	assert.NotContains(t, buffer.String(), `## Terraless Lambda@Edge`)
-	assert.NotContains(t, buffer.String(), `resource "aws_cloudwatch_log_group" "lambda-log-terraless-lambda-cloudfront"`)
-	assert.NotContains(t, buffer.String(), `resource "aws_lambda_function" "terraless-lambda-cloudfront"`)
+	assert.NotContains(t, result, `## Terraless Lambda@Edge`)
+	assert.NotContains(t, result, `resource "aws_cloudwatch_log_group" "lambda-log-terraless-lambda-cloudfront"`)
+	assert.NotContains(t, result, `resource "aws_lambda_function" "terraless-lambda-cloudfront"`)
 }
 
 func TestTemplatesFunctions_RenderUploadTemplates_WithDomain(t *testing.T) {
 	// given
 	provider := ProviderAws{}
-	buffer := bytes.Buffer{}
 	terralessData := schema.TerralessData{
 		Config: schema.TerralessConfig{
 			ProjectName: "DummyProjectName",
@@ -54,12 +51,12 @@ func TestTemplatesFunctions_RenderUploadTemplates_WithDomain(t *testing.T) {
 	}
 
 	// when
-	buffer = provider.RenderUploadTemplates(terralessData, buffer)
+	result := provider.RenderUploadTemplates(terralessData)
 
 	// then
-	assert.Contains(t, buffer.String(), `## Terraless Lambda@Edge`)
-	assert.Contains(t, buffer.String(), `resource "aws_cloudwatch_log_group" "lambda-log-terraless-lambda-cloudfront"`)
-	assert.Contains(t, buffer.String(), `resource "aws_lambda_function" "terraless-lambda-cloudfront"`)
-	assert.Contains(t, buffer.String(), `resource "aws_cloudfront_origin_access_identity" "terraless-default"`)
-	assert.Contains(t, buffer.String(), `resource "aws_cloudfront_distribution" "terraless-default"`)
+	assert.Contains(t, result, `## Terraless Lambda@Edge`)
+	assert.Contains(t, result, `resource "aws_cloudwatch_log_group" "lambda-log-terraless-lambda-cloudfront"`)
+	assert.Contains(t, result, `resource "aws_lambda_function" "terraless-lambda-cloudfront"`)
+	assert.Contains(t, result, `resource "aws_cloudfront_origin_access_identity" "terraless-default"`)
+	assert.Contains(t, result, `resource "aws_cloudfront_distribution" "terraless-default"`)
 }

@@ -7,7 +7,8 @@ import (
 	"github.com/Odania-IT/terraless/templates"
 )
 
-func (provider *ProviderAws) RenderEndpointTemplates(config schema.TerralessConfig, buffer bytes.Buffer) bytes.Buffer {
+func (provider *ProviderAws) RenderEndpointTemplates(config schema.TerralessConfig) string {
+	var buffer bytes.Buffer
 	for _, endpoint := range config.Endpoints {
 		if endpoint.Type == "apigateway" {
 			logger.Debug("Generating certificate template for %s\n", endpoint.Domain)
@@ -18,5 +19,5 @@ func (provider *ProviderAws) RenderEndpointTemplates(config schema.TerralessConf
 		}
 	}
 
-	return buffer
+	return buffer.String()
 }

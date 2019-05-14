@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/Odania-IT/terraless/schema"
 	"github.com/Odania-IT/terraless/support"
 	"github.com/Odania-IT/terraless/templates"
@@ -49,7 +50,8 @@ resource "aws_lambda_permission" "lambda-{{.FunctionName}}" {
 `
 
 var addTerralessLambdaRole bool
-func renderBaseFunction(functionConfig schema.TerralessFunction, functionName string, config schema.TerralessConfig, buffer bytes.Buffer) bytes.Buffer {
+func renderBaseFunction(functionConfig schema.TerralessFunction, functionName string, config schema.TerralessConfig) string {
+	var buffer bytes.Buffer
 	logger.Debug("Rendering Template for Lambda Function: ", functionName)
 	functionConfig.RenderEnvironment = len(functionConfig.Environment) > 0
 	functionConfig.FunctionName = functionName
@@ -71,20 +73,22 @@ func renderBaseFunction(functionConfig schema.TerralessFunction, functionName st
 		}
 	}
 
-	return templates.RenderTemplateToBuffer(functionConfig, buffer, lambdaFunctionsTemplate, "aws-lambda-function")
+	buffer = templates.RenderTemplateToBuffer(functionConfig, buffer, lambdaFunctionsTemplate, "aws-lambda-function")
+	return buffer.String()
 }
 
-func (provider *ProviderAws) RenderFunctionTemplates(resourceType string, functionEvents schema.FunctionEvents, terralessData *schema.TerralessData, buffer bytes.Buffer) bytes.Buffer {
+func (provider *ProviderAws) RenderFunctionTemplates(resourceType string, functionEvents schema.FunctionEvents, terralessData *schema.TerralessData) string {
 	if !provider.CanHandle(resourceType) {
-		return buffer
+		return ""
 	}
 
+	var buffer bytes.Buffer
 	buffer.WriteString("## Terraless Functions AWS\n\n")
 	functionsToRender := map[string]bool{}
 	for eventType, functionEventArray := range functionEvents.Events {
-		baseTemplate := eventTemplates[eventType]
+		baseTemplate, err := getAwsTemplate("function-event/" + eventType + ".tf.tmpl", false)
 
-		if baseTemplate == "" {
+		if err != nil {
 			baseTemplate = "## Terraless " + eventType + "\n"
 		}
 
@@ -114,11 +118,11 @@ func (provider *ProviderAws) RenderFunctionTemplates(resourceType string, functi
 				functionEvent.AuthorizerId = "${aws_api_gateway_authorizer." + authorizer.TerraformName + ".id}"
 			}
 
-			// Intergration Template
-			integrationTemplate := functionIntegrationTemplates[functionEvent.Type]
+			// Integration Template
+			integrationTemplate, err := getAwsTemplate("function-event/integration/" + functionEvent.Type + ".tf.tmpl", true)
 
-			if integrationTemplate == "" {
-				fatal("Event Type ", functionEvent.Type, " unknown! Function: ", event.FunctionName)
+			if err != nil {
+				fatal(fmt.Sprintf("Event Type %s unknown! Function: %s", functionEvent.Type, event.FunctionName))
 			}
 
 			buffer = templates.RenderTemplateToBuffer(functionEvent, buffer, integrationTemplate, "function-event-" + functionEvent.Type + "-" + functionEvent.Idx)
@@ -129,10 +133,10 @@ func (provider *ProviderAws) RenderFunctionTemplates(resourceType string, functi
 	// Render function base
 	for functionName := range functionsToRender {
 		functionConfig := terralessData.Config.Functions[functionName]
-		buffer = renderBaseFunction(functionConfig, functionName, terralessData.Config, buffer)
+		buffer.WriteString(renderBaseFunction(functionConfig, functionName, terralessData.Config))
 
 		terralessData.Config.Runtimes = append(terralessData.Config.Runtimes, functionConfig.Runtime)
 	}
 
-	return buffer
+	return buffer.String()
 }

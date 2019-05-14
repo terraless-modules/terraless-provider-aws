@@ -19,7 +19,7 @@ const (
 
 func askForTokenCode(tokenSerialNumber string, in io.Reader) string {
 	reader := bufio.NewReader(in)
-	fmt.Printf("Enter mfa token for %s: ", tokenSerialNumber)
+	logger.Info(fmt.Sprintf("Enter mfa token for %s: ", tokenSerialNumber))
 
 	tokenCode, err := reader.ReadString('\n')
 	if err != nil {

@@ -56,8 +56,8 @@ func TestTemplatesFunctions_FinalizeTemplates(t *testing.T) {
 	}
 
 	// when
-	buffer := provider.FinalizeTemplates(terralessData, bytes.Buffer{})
+	result := provider.FinalizeTemplates(terralessData)
 
 	// then
-	assert.Contains(t, buffer.String(), `resource "aws_iam_role" "terraless-lambda-iam-role"`)
+	assert.Contains(t, result, `resource "aws_iam_role" "terraless-lambda-iam-role"`)
 }

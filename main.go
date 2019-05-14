@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/Odania-IT/terraless/schema"
 	"github.com/Odania-IT/terraless/templates"
 	"github.com/gobuffalo/packr/v2"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
+	"github.com/pkg/errors"
 	"os"
 )
 
@@ -69,24 +71,49 @@ func fatal(msg string, args ...interface{}) {
 }
 
 func awsTemplates(name string) string {
+	template, err := getAwsTemplate(name, true)
+
+	if err != nil {
+		fatal(err.Error())
+	}
+
+	return template
+}
+
+func getAwsTemplate(name string, doFatal bool) (string, error) {
+	logger.Debug(fmt.Sprintf("Looking up template %s\n", name))
 	pckr := packr.New("awsTemplates", "./templates")
 
 	tpl, err := pckr.FindString(name)
 	if err != nil {
-		fatal("Failed retrieving template: ", err)
+		if doFatal {
+			fatal(fmt.Sprintf("Failed retrieving template: %s", err))
+		}
+
+		return "", errors.New(fmt.Sprintf("Failed retrieving template: %s", err))
 	}
 
-	return tpl
+	return tpl, nil
+}
+
+func listTemplates() {
+	pckr := packr.New("awsTemplates", "./templates")
+
+	list := pckr.List()
+	for _, entry := range list {
+		logger.Warn(entry)
+	}
 }
 
 func (provider *ProviderAws) CanHandle(resourceType string) bool {
 	return resourceType == "aws"
 }
 
-func (provider *ProviderAws) FinalizeTemplates(terralessData schema.TerralessData, buffer bytes.Buffer) bytes.Buffer {
+func (provider *ProviderAws) FinalizeTemplates(terralessData schema.TerralessData) string {
+	var buffer bytes.Buffer
 	if addTerralessLambdaRole {
 		buffer = templates.RenderTemplateToBuffer(terralessData, buffer, awsTemplates("iam.tf.tmpl"), "aws-lambda-iam")
 	}
 
-	return buffer
+	return buffer.String()
 }
