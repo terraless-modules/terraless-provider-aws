@@ -18,6 +18,7 @@ exports.singleEntryPointHandler = async (event) => {
     }
 
     // Make sure the request ends with a "/"
+    // Only if the last part does not contain a dot
     if (request.uri.match('/[^/.]+$')) {
         return {
             status: '301',
@@ -31,7 +32,7 @@ exports.singleEntryPointHandler = async (event) => {
     }
 
     // Redirect "/index.html" to "/"
-    const prefixPath = request.uri.match('(.*)/index.html');
+    const prefixPath = request.uri.match('(.*)/index.html$');
     if (prefixPath) {
         return {
             status: '301',
@@ -59,7 +60,7 @@ exports.staticHandler = async (event) => {
     }
 
     // Redirect "/index.html" to "/"
-    const prefixPath = request.uri.match('(.*)/index.html');
+    const prefixPath = request.uri.match('(.*)/index.html$');
     if (prefixPath) {
         return {
             status: '301',
@@ -86,17 +87,19 @@ exports.staticHandler = async (event) => {
     }
 
     // Redirect to "www.DOMAIN"
-    let parts = request.origin.domainName.split('.');
-    if (parts === 1) {
-        return {
-            status: '301',
-            statusDescription: 'Found',
-            headers: {
-                location: [{
-                    key: 'Location', value: 'https://www.' + request.origin.domainName + '/' + request.uri + '/',
-                }],
-            }
-        };
+    if (request.origin) {
+        let parts = request.origin.domainName.split('.');
+        if (parts === 1) {
+            return {
+                status: '301',
+                statusDescription: 'Found',
+                headers: {
+                    location: [{
+                        key: 'Location', value: 'https://www.' + request.origin.domainName + '/' + request.uri + '/',
+                    }],
+                }
+            };
+        }
     }
 
     return request;
@@ -107,17 +110,19 @@ exports.redirectToWww = async (event) => {
     const request = event.Records[0].cf.request;
 
     // Redirect to "www.DOMAIN"
-    let parts = request.origin.domainName.split('.');
-    if (parts === 1) {
-        return {
-            status: '301',
-            statusDescription: 'Found',
-            headers: {
-                location: [{
-                    key: 'Location', value: 'https://www.' + request.origin.domainName + '/' + request.uri + '/',
-                }],
-            }
-        };
+    if (request.origin) {
+        let parts = request.origin.domainName.split('.');
+        if (parts === 1) {
+            return {
+                status: '301',
+                statusDescription: 'Found',
+                headers: {
+                    location: [{
+                        key: 'Location', value: 'https://www.' + request.origin.domainName + '/' + request.uri + '/',
+                    }],
+                }
+            };
+        }
     }
 
     return request;
