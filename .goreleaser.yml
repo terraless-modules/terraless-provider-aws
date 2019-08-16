@@ -34,8 +34,8 @@ changelog:
 
 blobs:
   - provider: s3
-    bucket: terraless-resources
+    bucket: terraless-plugins
     folder: "terraless-provider-aws/{{ .Tag }}"
   - provider: s3
-    bucket: terraless-resources
+    bucket: terraless-plugins
     folder: "terraless-provider-aws/latest"
