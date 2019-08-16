@@ -8,3 +8,4 @@ main-packr.go
 # Others
 coverage.txt
 terraless-provider-aws
+dist
