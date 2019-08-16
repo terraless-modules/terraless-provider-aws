@@ -14,7 +14,7 @@ import (
 
 const (
 	ProviderName = "terraless-provider-aws"
-	VERSION      = "0.0.2"
+	VERSION      = "0.1.0"
 )
 
 type ProviderAws struct {
