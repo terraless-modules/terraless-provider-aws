@@ -45,6 +45,13 @@ func processIntermediateProfile(provider schema.TerralessProvider, autoSignIn bo
 
 		if autoSignIn {
 			validateOrRefreshIntermediateSession(provider, intermediateProfile)
+		} else {
+			validSession, err := sessionValid(provider)
+
+			if err != nil || !validSession {
+				logger.Debug("Intermediate session not valid.... [AutoSignIn disabled]")
+				fatal("Intermediate session not valid.... [AutoSignIn disabled]", nil)
+			}
 		}
 
 		intermediateProfilesProcessed[provider.Name] = intermediateProfile

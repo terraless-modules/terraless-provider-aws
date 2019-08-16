@@ -6,6 +6,14 @@
   This lambda is deployed by Terraless
 */
 
+const retrieveDomain = (request) => {
+  if (request.headers && request.headers.host) {
+      return request.headers.host.value;
+  }
+
+  return null;
+};
+
 // Serves all entries ending with a "/" with "/index.html"
 exports.singleEntryPointHandler = async (event) => {
     const request = event.Records[0].cf.request;
@@ -87,8 +95,9 @@ exports.staticHandler = async (event) => {
     }
 
     // Redirect to "www.DOMAIN"
-    if (request.origin) {
-        let parts = request.origin.domainName.split('.');
+    let domain = retrieveDomain(request);
+    if (domain) {
+        let parts = domain.split('.');
         if (parts === 1) {
             return {
                 status: '301',
@@ -110,8 +119,9 @@ exports.redirectToWww = async (event) => {
     const request = event.Records[0].cf.request;
 
     // Redirect to "www.DOMAIN"
-    if (request.origin) {
-        let parts = request.origin.domainName.split('.');
+    let domain = retrieveDomain(request);
+    if (domain) {
+        let parts = domain.split('.');
         if (parts === 1) {
             return {
                 status: '301',

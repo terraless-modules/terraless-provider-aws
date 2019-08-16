@@ -41,10 +41,14 @@ func TestTemplatesFunctions_RecursiveUpload(t *testing.T) {
 		"certificate.tf.tmpl",
 		"cloudfront.tf.tmpl",
 		"endpoint.tf.tmpl",
+		"function-event/http.tf.tmpl",
+		"function-event/integration/CodeCommit.tf.tmpl",
+		"function-event/integration/http.tf.tmpl",
+		"function-event/integration/sqs.tf.tmpl",
 		"iam.tf.tmpl",
 		"lambda-at-edge.js",
 		"lambda-at-edge.tf.tmpl",
 	}
-	assert.Equal(t, 7, uploadedFiles)
+	assert.Equal(t, 11, uploadedFiles)
 	assert.Equal(t, expected, uploadedFilenames)
 }

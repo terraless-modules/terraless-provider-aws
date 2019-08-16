@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"github.com/Odania-IT/terraless/schema"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -63,5 +62,5 @@ resource "aws_acm_certificate_validation" "terraless-certificate-example-com-val
 }
 
 `
-	assert.Equal(t, expected, result.String())
+	assert.Equal(t, expected, result)
 }

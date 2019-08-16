@@ -38,6 +38,24 @@ data "aws_iam_policy_document" "terraless-lambda" {
 
     resources = ["*"]
   }
+
+  {{ range $key, $val := .Config.Settings.Permissions }}
+  {{ if stringEqual $val.Type "aws" }}
+  {{ range $key2, $val2 := $val.Data }}
+  statement {
+    actions = [
+        {{ range $key3, $val3 := $val2.Actions }}"{{ $val3 }}",
+        {{ end }}
+    ]
+    effect = "{{ $val2.Effect }}"
+    resources = [
+        {{ range $key3, $val3 := $val2.Resources }}"{{ $val3 }}",
+        {{ end }}
+    ]
+  }
+  {{ end }}
+  {{ end }}
+  {{ end }}
 }
 
 resource "aws_iam_policy" "terraless-lambda-policy" {

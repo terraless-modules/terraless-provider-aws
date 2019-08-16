@@ -106,7 +106,7 @@ func (provider *ProviderAws) RenderFunctionTemplates(resourceType string, functi
 			functionEvent.Idx = strconv.FormatInt(int64(key), 10)
 			functionEvent.ProjectName = terralessData.Config.ProjectName
 			functionEvent.PathsRendered = pathsRendered
-			functionEvent.ResourceNameForPath = support.SanitizeString(functionEvent.Path)
+			functionEvent.ResourceNameForPath = functionEvent.Idx
 
 			// Authorization
 			if functionEvent.Authorizer == "" {
