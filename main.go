@@ -96,14 +96,14 @@ func getAwsTemplate(name string, doFatal bool) (string, error) {
 	return tpl, nil
 }
 
-func listTemplates() {
-	pckr := packr.New("awsTemplates", "./templates")
-
-	list := pckr.List()
-	for _, entry := range list {
-		logger.Warn(entry)
-	}
-}
+// func listTemplates() {
+// 	pckr := packr.New("awsTemplates", "./templates")
+//
+// 	list := pckr.List()
+// 	for _, entry := range list {
+// 		logger.Warn(entry)
+// 	}
+// }
 
 func (provider *ProviderAws) CanHandle(resourceType string) bool {
 	return resourceType == "aws"
