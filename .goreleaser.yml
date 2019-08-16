@@ -17,10 +17,9 @@ builds:
     goarch:
       - amd64
 archive:
+  name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
   wrap_in_directory: true
-  format_overrides:
-    - goos: windows
-      format: zip
+  format: binary
 checksum:
   name_template: 'checksums.txt'
 snapshot:
