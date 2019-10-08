@@ -36,7 +36,7 @@ func getTokenCode(mfaArn string, reader io.Reader) string {
 }
 
 func getIntermediateSessionToken(provider schema.TerralessProvider) *sts.Credentials {
-	logger.Debug("Retrieving session for AWS Provider: %s", provider)
+	logger.Debug(fmt.Sprintf("Retrieving session for AWS Provider: %s", provider))
 	svc := sts.New(sessionForProvider(provider))
 
 	mfaDevice := provider.Data["mfa-device"]
@@ -68,7 +68,7 @@ func getDurationFromData(data map[string]string, key string, defaultValue int64)
 
 	parsedInt, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
-		logger.Error("Invalid value for %s specified! Please specify a int! Using default value now... Error: %s\n", key, err)
+		logger.Error(fmt.Sprintf("Invalid value for %s specified! Please specify a int! Using default value now... Error: %s\n", key, err))
 		return defaultValue
 	}
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/Odania-IT/terraless/schema"
 	"github.com/Odania-IT/terraless/support"
 	"github.com/aws/aws-sdk-go/aws"
@@ -14,11 +15,11 @@ var uploadFileFunc = s3Upload
 func (provider *ProviderAws) ProcessUpload(terralessData schema.TerralessData, upload schema.TerralessUpload) []string {
 	config := terralessData.Config
 	if upload.Type != "s3" {
-		logger.Debug("AWS-Provider can not handle upload %s\n", upload.Type)
+		logger.Debug(fmt.Sprintf("AWS-Provider can not handle upload %s\n", upload.Type))
 		return []string{}
 	}
 
-	logger.Info("Processing Upload Source: %s Bucket: %s\n", upload.Source, upload.Bucket)
+	logger.Info(fmt.Sprintf("Processing Upload Source: %s Bucket: %s\n", upload.Source, upload.Bucket))
 
 	configProvider := config.Providers[schema.ProcessString(upload.Provider, terralessData.Arguments, terralessData.Config.Settings)]
 	sess := simpleSession(configProvider)
@@ -29,7 +30,7 @@ func (provider *ProviderAws) ProcessUpload(terralessData schema.TerralessData, u
 	svc := s3manager.NewUploader(sess)
 
 	uploadedFiles := recursiveUpload(filepath.Join(config.SourcePath, upload.Source), upload.Target, upload.Bucket, svc)
-	logger.Debug("Uploaded files: %s\n", uploadedFiles)
+	logger.Debug(fmt.Sprintf("Uploaded files: %s\n", uploadedFiles))
 
 	return uploadedFiles
 }
@@ -42,7 +43,7 @@ func recursiveUpload(sourceDir string, targetPrefix string, bucketName string, s
 		fatal("Failed locating upload files: ", filepath.Base(sourceDir), " Error: ", err)
 	}
 
-	logger.Debug("%d Objects found to upload to %s\n", len(matches), bucketName)
+	logger.Debug(fmt.Sprintf("%d Objects found to upload to %s\n", len(matches), bucketName))
 	for _, filename := range matches {
 		info, err := os.Stat(filename)
 		targetFile := filepath.Join(targetPrefix, filepath.Base(filename))
@@ -52,7 +53,7 @@ func recursiveUpload(sourceDir string, targetPrefix string, bucketName string, s
 		}
 
 		if info.IsDir() {
-			logger.Debug("Processing directory %s", targetFile)
+			logger.Debug(fmt.Sprintf("Processing directory %s", targetFile))
 			result = append(result, recursiveUpload(filename, targetFile, bucketName, svc)...)
 		} else {
 			err = addFileToS3(svc, bucketName, filename, targetFile)
@@ -104,7 +105,7 @@ func addFileToS3(svc *s3manager.Uploader, bucket string, filename string, target
 		fatal("Can not read file %s! Error: %s\n", filename, err)
 	}
 
-	logger.Debug("Successfully uploaded %s to %s [Content-Type: %s]\n", filename, uploadResult.Location, contentType)
+	logger.Debug(fmt.Sprintf("Successfully uploaded %s to %s [Content-Type: %s]\n", filename, uploadResult.Location, contentType))
 	return err
 }
 

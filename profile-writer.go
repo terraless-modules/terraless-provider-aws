@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/Odania-IT/terraless/support"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/go-ini/ini"
@@ -46,7 +47,7 @@ func (pw AwsProfileWriter) lockAndWriteAwsCredentials(credentials sts.Credential
 }
 
 func (pw AwsProfileWriter) writeAwsCredentials(credentials sts.Credentials, targetProfile string) {
-	logger.Debug("Loading credentials file %s\n", pw.credentialsFile)
+	logger.Debug(fmt.Sprintf("Loading credentials file %s\n", pw.credentialsFile))
 	support.WriteToFileIfNotExists(pw.credentialsFile, "[default]")
 	cfg, err := ini.Load(pw.credentialsFile)
 
@@ -77,12 +78,12 @@ func (pw AwsProfileWriter) writeAwsCredentials(credentials sts.Credentials, targ
 		fatal("Failed writing config file %s! Error: %s\n", pw.credentialsFile, err)
 	}
 
-	logger.Debug("Wrote session token for profile %s\n", targetProfile)
-	logger.Debug("Token is valid until: %v\n", credentials.Expiration)
+	logger.Debug(fmt.Sprintf("Wrote session token for profile %s\n", targetProfile))
+	logger.Debug(fmt.Sprintf("Token is valid until: %v\n", credentials.Expiration))
 }
 
 func (pw AwsProfileWriter) writeAwsConfig(region string, targetProfile string) {
-	logger.Debug("Loading config file %s\n", pw.awsConfigFile)
+	logger.Debug(fmt.Sprintf("Loading config file %s\n", pw.awsConfigFile))
 	support.WriteToFileIfNotExists(pw.awsConfigFile, "[default]")
 	cfg, err := ini.Load(pw.awsConfigFile)
 
@@ -109,7 +110,7 @@ func (pw AwsProfileWriter) writeAwsConfig(region string, targetProfile string) {
 		fatal("Failed writing config file %s! Error: %s\n", pw.credentialsFile, err)
 	}
 
-	logger.Debug("Wrote aws config section for profile %s\n", targetProfile)
+	logger.Debug(fmt.Sprintf("Wrote aws config section for profile %s\n", targetProfile))
 }
 
 func writeKeyToSection(section *ini.Section, key string, val string) {

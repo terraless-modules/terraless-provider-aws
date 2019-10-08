@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/Odania-IT/terraless/support"
 	"github.com/Odania-IT/terraless/templates"
 )
@@ -24,7 +25,7 @@ resource "aws_route53_record" "{{ .TerraformName }}" {
 
 func Route53AliasRecordFor(domain string, zoneId string, buffer bytes.Buffer) bytes.Buffer {
 	if zoneId == "" {
-		logger.Warn("Not making route53 alias record for domain %s cause no zone id is set!\n", domain)
+		logger.Warn(fmt.Sprintf("Not making route53 alias record for domain %s cause no zone id is set!\n", domain))
 		return buffer
 	}
 

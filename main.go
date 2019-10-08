@@ -14,7 +14,7 @@ import (
 
 const (
 	ProviderName = "terraless-provider-aws"
-	VERSION      = "0.1.1"
+	VERSION      = "0.1.2"
 )
 
 type ProviderAws struct {
@@ -29,7 +29,7 @@ func (provider *ProviderAws) Info() schema.PluginInfo {
 }
 
 func (provider *ProviderAws) Exec(data schema.TerralessData) error {
-	provider.logger.Info("[%s] Executing", ProviderName)
+	provider.logger.Info(fmt.Sprintf("[%s] Executing", ProviderName))
 
 	return nil
 }

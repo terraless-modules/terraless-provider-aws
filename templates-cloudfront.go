@@ -3,6 +3,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"fmt"
 	"github.com/Odania-IT/terraless/schema"
 	"github.com/Odania-IT/terraless/support"
 	"github.com/Odania-IT/terraless/templates"
@@ -22,7 +23,7 @@ func (provider *ProviderAws) RenderUploadTemplates(terralessData schema.Terrales
 				buffer = renderLambdaAtEdge(currentConfig, upload, buffer)
 			}
 
-			logger.Debug("Generating cloudfront template for %s\n", upload.Cloudfront.Domain)
+			logger.Debug(fmt.Sprintf("Generating cloudfront template for %s\n", upload.Cloudfront.Domain))
 			upload.Cloudfront.Aliases = append(upload.Cloudfront.Aliases, upload.Cloudfront.Domain)
 			upload.Environment = terralessData.Arguments.Environment
 			upload.ProjectName = currentConfig.ProjectName

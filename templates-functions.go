@@ -52,7 +52,7 @@ resource "aws_lambda_permission" "lambda-{{.FunctionName}}" {
 var addTerralessLambdaRole bool
 func renderBaseFunction(functionConfig schema.TerralessFunction, functionName string, config schema.TerralessConfig) string {
 	var buffer bytes.Buffer
-	logger.Debug("Rendering Template for Lambda Function: ", functionName)
+	logger.Debug(fmt.Sprintf("Rendering Template for Lambda Function: %s\n", functionName))
 	functionConfig.RenderEnvironment = len(functionConfig.Environment) > 0
 	functionConfig.FunctionName = functionName
 	functionConfig.ProjectName = config.ProjectName
@@ -97,7 +97,7 @@ func (provider *ProviderAws) RenderFunctionTemplates(resourceType string, functi
 		// Events
 		pathsRendered := map[string]string{}
 		for key, event := range functionEventArray {
-			logger.Debug("[EventType %s][AWS %s] Rendering Event %s\n", eventType, event.FunctionName, event)
+			logger.Debug(fmt.Sprintf("[EventType %s][AWS %s] Rendering Event %s\n", eventType, event.FunctionName, event))
 			functionsToRender[event.FunctionName] = true
 
 			// Render function template

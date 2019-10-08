@@ -25,7 +25,7 @@ var writeSessionProfileFunc = writeSessionProfile
 func (provider *ProviderAws) PrepareSession(terralessConfig schema.TerralessConfig) {
 	for _, configProvider := range terralessConfig.Providers {
 		if provider.CanHandle(configProvider.Type) {
-			logger.Debug("Found AWS Provider: %s\n", configProvider.Name)
+			logger.Debug(fmt.Sprintf("Found AWS Provider: %s\n", configProvider.Name))
 
 			intermediateProfile := processIntermediateProfile(configProvider, terralessConfig.Settings.AutoSignIn)
 
@@ -39,7 +39,7 @@ func processIntermediateProfile(provider schema.TerralessProvider, autoSignIn bo
 
 	if intermediateProfilesProcessed[provider.Name] == "" {
 		if intermediateProfile == "" {
-			logger.Debug("No intermediate profile! Using default....")
+			logger.Debug(fmt.Sprintf("No intermediate profile! Using default...."))
 			intermediateProfile = "terraless-session"
 		}
 
@@ -49,7 +49,7 @@ func processIntermediateProfile(provider schema.TerralessProvider, autoSignIn bo
 			validSession, err := sessionValid(provider)
 
 			if err != nil || !validSession {
-				logger.Debug("Intermediate session not valid.... [AutoSignIn disabled]")
+				logger.Debug(fmt.Sprintf("Intermediate session not valid.... [AutoSignIn disabled]"))
 				fatal("Intermediate session not valid.... [AutoSignIn disabled]", nil)
 			}
 		}
@@ -61,17 +61,17 @@ func processIntermediateProfile(provider schema.TerralessProvider, autoSignIn bo
 }
 
 func verifyOrUpdateSession(provider schema.TerralessProvider, intermediateProfile string, autoSignIn bool) {
-	logger.Debug("Checking provider %s\n", provider)
+	logger.Debug(fmt.Sprintf("Checking provider %s\n", provider))
 	validSession, err := sessionValid(provider)
 	if !validSession {
 		if autoSignIn {
-			logger.Info("Trying auto login for provider %s [intermediate profile: %s]\n", provider.Name, intermediateProfile)
+			logger.Info(fmt.Sprintf("Trying auto login for provider %s [intermediate profile: %s]\n", provider.Name, intermediateProfile))
 			assumeRole(intermediateProfile, provider)
 			validSession, err = sessionValid(provider)
 		}
 
 		if !validSession {
-			fatal("No AWS Session for provider: %s [Error: %s]\n", provider.Name, err)
+			fatal(fmt.Sprintf("No AWS Session for provider: %s [Error: %s]\n", provider.Name, err))
 		}
 	}
 }
@@ -80,7 +80,7 @@ func validateOrRefreshIntermediateSession(provider schema.TerralessProvider, int
 	mfaDevice := provider.Data["mfa-device"]
 
 	if mfaDevice == "" {
-		logger.Debug("No mfa-device! Nothing to do....")
+		logger.Debug(fmt.Sprintf("No mfa-device! Nothing to do...."))
 		return
 	}
 
@@ -93,20 +93,20 @@ func validateOrRefreshIntermediateSession(provider schema.TerralessProvider, int
 	if baseProfile == "" {
 		baseProfile = "default"
 	}
-	logger.Debug("Creating intermediate profile session. Region: %s IntermediateProfile: %s BaseProfile: %s\n",
-		region, intermediateProfile, baseProfile)
+	logger.Debug(fmt.Sprintf("Creating intermediate profile session. Region: %s IntermediateProfile: %s BaseProfile: %s\n",
+		region, intermediateProfile, baseProfile))
 
 	intermediateProvider := schema.TerralessProvider{
 		Name: intermediateProfile,
 		Data: map[string]string{
-			"mfa-device":  mfaDevice,
-			"region":  region,
-			"profile": intermediateProfile,
+			"mfa-device": mfaDevice,
+			"region":     region,
+			"profile":    intermediateProfile,
 		},
 	}
 	validSession, err := sessionValid(intermediateProvider)
 	if err == nil && validSession {
-		logger.Debug("Intermediate session still valid....")
+		logger.Debug(fmt.Sprintf("Intermediate session still valid....\n"))
 		return
 	}
 
@@ -123,7 +123,7 @@ func assumeRole(intermediateProfile string, provider schema.TerralessProvider) {
 	role := provider.Data["role"]
 
 	if accountId == "" || role == "" {
-		fatal("Can not assume role without accountId and role! Provider: %s Data: %s\n", provider.Name, provider.Data)
+		fatal(fmt.Sprintf("Can not assume role without accountId and role! Provider: %s Data: %s\n", provider.Name, provider.Data))
 	}
 
 	arn := fmt.Sprintf("arn:aws:iam::%s:role/%s", accountId, role)
@@ -135,19 +135,19 @@ func assumeRole(intermediateProfile string, provider schema.TerralessProvider) {
 	}
 	svc := sts.New(sessionForProvider(signInProvider))
 
-	logger.Debug("Trying to assume role %s\n", arn)
+	logger.Info(fmt.Sprintf("Trying to assume role %s\n", arn))
 	output, err := execAssumeRoleFunc(svc, sts.AssumeRoleInput{
 		DurationSeconds: aws.Int64(getDurationFromData(provider.Data, "session-duration", TargetSessionTokenDuration)),
 		RoleArn:         aws.String(arn),
 		RoleSessionName: aws.String(support.SanitizeSessionName(provider.Name)),
 	})
 	if err != nil {
-		fatal("[Provider: %s] Failed retrieving session token! Error: %s\n", provider.Name, err)
+		fatal(fmt.Sprintf("[Provider: %s] Failed retrieving session token! Role: %s Error: %s\n", provider.Name, role, err))
 	}
 
 	profileName := provider.Name
 	if provider.Data["profile"] != "" {
-		logger.Debug("Using profile name from data %s [Provider: %s]\n", provider.Data["profile"], provider.Name)
+		logger.Debug(fmt.Sprintf("Using profile name from data %s [Provider: %s]\n", provider.Data["profile"], provider.Name))
 		profileName = provider.Data["profile"]
 	}
 
@@ -164,15 +164,15 @@ func execAssumeRole(svc *sts.STS, input sts.AssumeRoleInput) (*sts.AssumeRoleOut
 }
 
 func sessionValid(provider schema.TerralessProvider) (bool, error) {
-	logger.Debug("Checking validity of AWS Provider: %s", provider)
+	logger.Debug(fmt.Sprintf("Checking validity of AWS Provider: %s", provider))
 	identity, err := retrieveCallerIdentityFunc(provider)
 
 	if err != nil {
-		logger.Debug("Invalid AWS Session for provider: %s Error: %s\n", provider.Name, err)
+		logger.Debug(fmt.Sprintf("Invalid AWS Session for provider: %s Error: %s\n", provider.Name, err))
 		return false, err
 	}
 
-	logger.Debug("Valid AWS Session for provider: %s User: %s\n", provider.Name, identity)
+	logger.Debug(fmt.Sprintf("Valid AWS Session for provider: %s User: %s\n", provider.Name, identity))
 	return true, nil
 }
 
@@ -190,14 +190,14 @@ func sessionForProvider(provider schema.TerralessProvider) *session.Session {
 	currentCredentials := credentials.NewSharedCredentials("", profileName)
 	config := aws.Config{
 		Credentials: currentCredentials,
-		Region:      aws.String(provider.Data["region"]),
+		Region: aws.String(provider.Data["region"]),
 	}
 
-	logger.Debug("AWS Session Profile for config %s\n", provider.Data)
+	logger.Debug(fmt.Sprintf("AWS Session Profile for config %s\n", provider.Data))
 	sess, err := session.NewSession(&config)
 
 	if err != nil {
-		fatal("Failed creating AWS Session for provider: %s Error: %s\n", provider, err)
+		fatal(fmt.Sprintf("Failed creating AWS Session for provider: %s Error: %s\n", provider, err))
 	}
 
 	return sess
@@ -211,7 +211,7 @@ func simpleSession(provider schema.TerralessProvider) *session.Session {
 	sess, err := session.NewSession(&config)
 
 	if err != nil {
-		fatal("Failed creating AWS Session for provider: %s Error: %s\n", provider, err)
+		fatal(fmt.Sprintf("Failed creating AWS Session for provider: %s Error: %s\n", provider, err))
 	}
 
 	return sess
