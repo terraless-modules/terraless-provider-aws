@@ -22,7 +22,9 @@ var execAssumeRoleFunc = execAssumeRole
 var retrieveCallerIdentityFunc = retrieveCallerIdentity
 var writeSessionProfileFunc = writeSessionProfile
 
-func (provider *ProviderAws) PrepareSession(terralessConfig schema.TerralessConfig) {
+func (provider *ProviderAws) PrepareSession(terralessConfig schema.TerralessConfig) map[string]string {
+	var result = map[string]string{}
+
 	for _, configProvider := range terralessConfig.Providers {
 		if provider.CanHandle(configProvider.Type) {
 			logger.Debug(fmt.Sprintf("Found AWS Provider: %s\n", configProvider.Name))
@@ -30,8 +32,12 @@ func (provider *ProviderAws) PrepareSession(terralessConfig schema.TerralessConf
 			intermediateProfile := processIntermediateProfile(configProvider, terralessConfig.Settings.AutoSignIn)
 
 			verifyOrUpdateSession(configProvider, intermediateProfile, terralessConfig.Settings.AutoSignIn)
+
+			result["AWS_PROFILE"] = getProfileName(configProvider)
 		}
 	}
+
+	return result
 }
 
 func processIntermediateProfile(provider schema.TerralessProvider, autoSignIn bool) string {
@@ -62,6 +68,7 @@ func processIntermediateProfile(provider schema.TerralessProvider, autoSignIn bo
 
 func verifyOrUpdateSession(provider schema.TerralessProvider, intermediateProfile string, autoSignIn bool) {
 	logger.Debug(fmt.Sprintf("Checking provider %s\n", provider))
+
 	validSession, err := sessionValid(provider)
 	if !validSession {
 		if autoSignIn {
@@ -145,11 +152,7 @@ func assumeRole(intermediateProfile string, provider schema.TerralessProvider) {
 		fatal(fmt.Sprintf("[Provider: %s] Failed retrieving session token! Role: %s Error: %s\n", provider.Name, role, err))
 	}
 
-	profileName := provider.Name
-	if provider.Data["profile"] != "" {
-		logger.Debug(fmt.Sprintf("Using profile name from data %s [Provider: %s]\n", provider.Data["profile"], provider.Name))
-		profileName = provider.Data["profile"]
-	}
+	profileName := getProfileName(provider)
 
 	region := provider.Data["region"]
 	if region == "" {
@@ -157,6 +160,16 @@ func assumeRole(intermediateProfile string, provider schema.TerralessProvider) {
 	}
 
 	writeSessionProfileFunc(*output.Credentials, profileName, region)
+}
+
+func getProfileName(provider schema.TerralessProvider) string {
+	profileName := provider.Name
+	if provider.Data["profile"] != "" {
+		logger.Debug(fmt.Sprintf("Using profile name from data %s [Provider: %s]\n", provider.Data["profile"], provider.Name))
+		profileName = provider.Data["profile"]
+	}
+
+	return profileName
 }
 
 func execAssumeRole(svc *sts.STS, input sts.AssumeRoleInput) (*sts.AssumeRoleOutput, error) {
