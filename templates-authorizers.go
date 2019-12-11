@@ -33,7 +33,7 @@ func (provider *ProviderAws) GenerateHelperFunctionCommand(teamName string, Prov
 	buffer := bytes.Buffer{}
 
 	data := map[string]string{
-		"AwsProfile": teamName + "-" + ProviderName + "-" + roleName,
+		"AwsProfile": ProviderName + "-" + roleName,
 		"TeamName": teamName,
 		"ProfileName": ProviderName,
 		"RoleName": roleName,
