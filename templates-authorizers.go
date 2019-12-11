@@ -8,6 +8,13 @@ import (
 	"github.com/Odania-IT/terraless/templates"
 )
 
+const (
+	helperFunctionCommand = `
+terraless auth --auth-provider {{ .TeamName }}:{{ .ProfileName }}:role={{ .RoleName }}
+export AWS_PROFILE={{ .AwsProfile }}
+`
+)
+
 func (provider *ProviderAws) RenderAuthorizerTemplates(config schema.TerralessConfig) string {
 	var buffer bytes.Buffer
 	for _, authorizer := range config.Authorizers {
@@ -18,6 +25,21 @@ func (provider *ProviderAws) RenderAuthorizerTemplates(config schema.TerralessCo
 			buffer = templates.RenderTemplateToBuffer(authorizer, buffer, awsTemplates("authorizer.tf.tmpl"), "terraless-authorizer")
 		}
 	}
+
+	return buffer.String()
+}
+
+func (provider *ProviderAws) GenerateHelperFunctionCommand(teamName string, ProviderName string, roleName string) string {
+	buffer := bytes.Buffer{}
+
+	data := map[string]string{
+		"AwsProfile": teamName + "-" + ProviderName + "-" + roleName,
+		"TeamName": teamName,
+		"ProfileName": ProviderName,
+		"RoleName": roleName,
+	}
+
+	buffer = templates.RenderTemplateToBuffer(data, buffer, helperFunctionCommand, "terraless-helper-function")
 
 	return buffer.String()
 }
